@@ -7,12 +7,9 @@ WORKDIR /app
 # Build-time placeholders. Runtime values are supplied via website.env
 # inside the pod; these defaults exist only so `vite build` and the
 # SvelteKit `analyse` step can complete.
-ARG PUBLIC_SITE_URL=https://tc.ts13.de
-ARG TC_MANAGER_API_URL=http://localhost:3000
-ARG TC_MANAGER_API_TOKEN=placeholder-build-token
-ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL
-ENV TC_MANAGER_API_URL=$TC_MANAGER_API_URL
-ENV TC_MANAGER_API_TOKEN=$TC_MANAGER_API_TOKEN
+ENV PUBLIC_SITE_URL=https://tc.ts13.de
+ENV TC_MANAGER_API_URL=http://localhost:3000
+ENV TC_MANAGER_API_TOKEN=placeholder-build-token
 
 COPY package.json package-lock.json ./
 RUN npm ci
