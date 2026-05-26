@@ -7,7 +7,8 @@
    * @prop {string} currentPath  The active pathname; used for aria-current.
    */
   import { page } from '$app/state'
-  import { Menu, Phone, Mail, MapPin, ShoppingCart } from '@lucide/svelte'
+  import { slide } from 'svelte/transition'
+  import { Menu, X, Phone, Mail, MapPin, ShoppingCart } from '@lucide/svelte'
   import { company } from '$lib/company'
   import { useCart } from '$features/reifenshop/cart-context.svelte'
 
@@ -16,6 +17,19 @@
 
   /** Shared shop cart — used to render the badge with the line count. */
   const cart = useCart()
+
+  /** Whether the mobile accordion menu is expanded. */
+  let mobileOpen = $state(false)
+
+  /** Close the mobile menu after navigation or when the viewport widens. */
+  $effect(() => {
+    void page.url?.pathname
+    mobileOpen = false
+  })
+
+  function onKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') mobileOpen = false
+  }
 
   /**
    * The visible navigation items. Order = display order.
@@ -39,6 +53,8 @@
     return path === href || path.startsWith(`${href}/`)
   }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <header class="bg-base-100/95 sticky top-0 z-40 border-b border-base-200 shadow-sm backdrop-blur">
   <div class="bg-neutral text-neutral-content text-sm">
@@ -100,24 +116,53 @@
         {/if}
       </a>
       <a href="/termin" class="btn btn-primary hidden md:inline-flex">Termin buchen</a>
-      <div class="dropdown dropdown-end lg:hidden">
-        <button class="btn btn-ghost btn-square" aria-label="Menü öffnen">
+      <button
+        type="button"
+        class="btn btn-ghost btn-square lg:hidden"
+        aria-label={mobileOpen ? 'Menü schliessen' : 'Menü öffnen'}
+        aria-expanded={mobileOpen}
+        aria-controls="mobile-nav"
+        onclick={() => (mobileOpen = !mobileOpen)}
+      >
+        {#if mobileOpen}
+          <X class="size-6" aria-hidden="true" />
+        {:else}
           <Menu class="size-6" aria-hidden="true" />
-        </button>
-        <ul class="menu dropdown-content menu-lg bg-base-100 rounded-box z-50 mt-3 w-64 gap-1 p-2 shadow-xl">
-          {#each links as link (link.href)}
-            <li>
-              <a
-                href={link.href}
-                aria-current={isActive(link.href) ? 'page' : undefined}
-                class:menu-active={isActive(link.href)}
-              >
-                {link.label}
-              </a>
-            </li>
-          {/each}
-        </ul>
-      </div>
+        {/if}
+      </button>
     </div>
   </div>
+
+  {#if mobileOpen}
+    <nav
+      id="mobile-nav"
+      class="border-base-200 bg-base-100 border-t lg:hidden"
+      aria-label="Hauptnavigation (mobil)"
+      transition:slide={{ duration: 200 }}
+    >
+      <ul class="menu menu-lg w-full gap-1 p-3 text-base font-semibold">
+        {#each links as link (link.href)}
+          <li>
+            <a
+              href={link.href}
+              aria-current={isActive(link.href) ? 'page' : undefined}
+              class:menu-active={isActive(link.href)}
+              onclick={() => (mobileOpen = false)}
+            >
+              {link.label}
+            </a>
+          </li>
+        {/each}
+        <li class="mt-2 md:hidden">
+          <a
+            href="/termin"
+            class="btn btn-primary justify-center"
+            onclick={() => (mobileOpen = false)}
+          >
+            Termin buchen
+          </a>
+        </li>
+      </ul>
+    </nav>
+  {/if}
 </header>
