@@ -56,14 +56,31 @@
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'
       }).addTo(map)
 
-      const icon = L.divIcon({
-        className: 'twincars-marker',
-        html: `<div style="background:#cd1316;color:white;border-radius:9999px;padding:8px 12px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.25);white-space:nowrap;">TwinCars</div>`,
-        iconSize: [80, 32],
-        iconAnchor: [40, 32]
+      // Use Leaflet's default pin icon, with bundled marker assets so it
+      // works through Vite's asset pipeline without remote CDN fetches.
+      const iconUrl = (await import('leaflet/dist/images/marker-icon.png')).default
+      const iconRetinaUrl = (await import('leaflet/dist/images/marker-icon-2x.png')).default
+      const shadowUrl = (await import('leaflet/dist/images/marker-shadow.png')).default
+      const icon = L.icon({
+        iconUrl,
+        iconRetinaUrl,
+        shadowUrl,
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
       })
       const marker = L.marker([lat, lon], { icon, title: altText }).addTo(map)
-      if (popup) marker.bindPopup(popup).openPopup()
+      if (popup) {
+        marker
+          .bindPopup(popup, {
+            closeButton: false,
+            closeOnClick: false,
+            autoClose: false,
+            closeOnEscapeKey: false
+          })
+          .openPopup()
+      }
 
       state = { map }
     })()

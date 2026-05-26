@@ -83,17 +83,17 @@
             </ul>
           </div>
         </div>
-      </aside>
 
-      <div class="space-y-6 lg:col-span-3">
         <LeafletMap
           lat={company.geo.lat}
           lon={company.geo.lon}
           popup="<strong>{company.brandName}</strong><br>{company.address.street}<br>{company.address.zip} {company.address.city}"
           altText="Karte mit Standort der Werkstatt {company.brandName}"
-          height="h-72"
+          height="h-72 md:h-80"
         />
+      </aside>
 
+      <div class="space-y-6 lg:col-span-3">
         <section class="bg-base-100 border-base-200 rounded-2xl border p-6" aria-labelledby="form-title">
           <h2 id="form-title" class="text-xl font-semibold">Schreiben Sie uns</h2>
           {#if sendContact.result?.status === 'ok'}

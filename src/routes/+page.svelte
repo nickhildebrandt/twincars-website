@@ -135,7 +135,7 @@
       </p>
     </header>
 
-    <div class="grid gap-8 lg:grid-cols-5">
+    <div class="grid gap-8 lg:grid-cols-5 lg:items-stretch">
       <aside class="space-y-6 lg:col-span-2">
         <div class="card bg-base-100 border-base-300 border">
           <div class="card-body">
@@ -182,13 +182,13 @@
         </div>
       </aside>
 
-      <div class="lg:col-span-3">
+      <div class="lg:col-span-3 lg:h-full">
         <LeafletMap
           lat={company.geo.lat}
           lon={company.geo.lon}
           popup="<strong>{company.brandName}</strong><br>{company.address.street}<br>{company.address.zip} {company.address.city}"
           altText="Karte mit Standort der Werkstatt {company.brandName}"
-          height="h-[480px]"
+          height="h-96 lg:h-full min-h-80"
         />
       </div>
     </div>
