@@ -139,31 +139,21 @@
 
 <section class="bg-base-200 py-12 md:py-16">
   <div class="mx-auto max-w-5xl px-4">
-    <ol class="mb-8 grid grid-cols-4 gap-2 text-xs md:text-sm" aria-label="Buchungsfortschritt">
+    <ol class="steps steps-vertical lg:steps-horizontal mb-8 w-full" aria-label="Buchungsfortschritt">
       {#each [
         { id: 'service', label: 'Leistung' },
         { id: 'slot', label: 'Termin' },
         { id: 'contact', label: 'Kontakt' },
         { id: 'done', label: 'Bestätigung' }
       ] as s, i (s.id)}
+        {@const stepIndex = ['service', 'slot', 'contact', 'done'].indexOf(step)}
         {@const isCurrent = step === s.id}
-        {@const isDone = ['service', 'slot', 'contact', 'done'].indexOf(step) > i}
+        {@const isReached = stepIndex >= i}
         <li
-          class="rounded-xl border p-3 text-center font-medium"
-          class:border-primary={isCurrent}
-          class:bg-primary={isCurrent}
-          class:text-primary-content={isCurrent}
-          class:border-success={isDone && !isCurrent}
-          class:bg-success={isDone && !isCurrent}
-          class:text-success-content={isDone && !isCurrent}
-          class:border-base-300={!isCurrent && !isDone}
-          class:bg-base-100={!isCurrent && !isDone}
-          class:text-base-content={!isCurrent && !isDone}
+          class="step"
+          class:step-primary={isReached}
           aria-current={isCurrent ? 'step' : undefined}
         >
-          <span class="block text-[0.65rem] font-semibold uppercase tracking-wider">
-            Schritt {i + 1}
-          </span>
           {s.label}
         </li>
       {/each}
