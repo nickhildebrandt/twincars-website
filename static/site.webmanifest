@@ -1,0 +1,22 @@
+{
+  "name": "TwinCars Bernau",
+  "short_name": "TwinCars",
+  "description": "TwinCars Bernau – Ihre Kfz-Meisterwerkstatt in Bernau bei Berlin. Reparatur, Inspektion, HU/AU, Reifenhandel und Gebrauchtwagen.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "/logo-twincars.png",
+      "type": "image/png",
+      "sizes": "756x186"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#cd1316",
+  "lang": "de-DE"
+}

@@ -1,0 +1,104 @@
+@import 'tailwindcss';
+@plugin 'daisyui' {
+  themes: false;
+  logs: false;
+}
+
+/*
+ * Custom DaisyUI theme matching the TwinCars brand identity.
+ * The accent red `#cd1316` echoes the existing twin-cars.de site
+ * while we keep the rest neutral for a modern, premium feel.
+ */
+@plugin 'daisyui/theme' {
+  name: 'twincars';
+  default: true;
+  prefersdark: false;
+  color-scheme: 'light';
+
+  --color-base-100: oklch(99% 0 0);
+  --color-base-200: oklch(96% 0.003 264);
+  --color-base-300: oklch(91% 0.005 264);
+  --color-base-content: oklch(22% 0.02 264);
+
+  --color-primary: oklch(56% 0.21 26);
+  --color-primary-content: oklch(98% 0 0);
+
+  --color-secondary: oklch(38% 0.02 264);
+  --color-secondary-content: oklch(98% 0 0);
+
+  --color-accent: oklch(72% 0.18 60);
+  --color-accent-content: oklch(15% 0.02 60);
+
+  --color-neutral: oklch(20% 0.02 264);
+  --color-neutral-content: oklch(98% 0 0);
+
+  --color-info: oklch(70% 0.13 220);
+  --color-info-content: oklch(15% 0.02 220);
+  --color-success: oklch(65% 0.17 145);
+  --color-success-content: oklch(98% 0 0);
+  --color-warning: oklch(78% 0.16 75);
+  --color-warning-content: oklch(15% 0.02 75);
+  --color-error: oklch(60% 0.22 27);
+  --color-error-content: oklch(98% 0 0);
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin 'daisyui/theme' {
+  name: 'twincars-dark';
+  default: false;
+  prefersdark: true;
+  color-scheme: 'dark';
+
+  --color-base-100: oklch(20% 0.01 264);
+  --color-base-200: oklch(17% 0.01 264);
+  --color-base-300: oklch(14% 0.01 264);
+  --color-base-content: oklch(95% 0.003 264);
+
+  --color-primary: oklch(64% 0.22 26);
+  --color-primary-content: oklch(99% 0 0);
+
+  --color-secondary: oklch(80% 0.02 264);
+  --color-secondary-content: oklch(15% 0.02 264);
+
+  --color-accent: oklch(78% 0.18 60);
+  --color-accent-content: oklch(15% 0.02 60);
+
+  --color-neutral: oklch(28% 0.02 264);
+  --color-neutral-content: oklch(95% 0.003 264);
+
+  --color-info: oklch(75% 0.13 220);
+  --color-info-content: oklch(15% 0.02 220);
+  --color-success: oklch(70% 0.17 145);
+  --color-success-content: oklch(15% 0.02 145);
+  --color-warning: oklch(80% 0.16 75);
+  --color-warning-content: oklch(15% 0.02 75);
+  --color-error: oklch(68% 0.22 27);
+  --color-error-content: oklch(99% 0 0);
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/*
+ * Leaflet CSS. We import it from JS in the LeafletMap component to keep
+ * it out of the SSR critical path, but a global :where() reset for the
+ * map container ensures it isn't overridden by Tailwind's preflight.
+ */
+.leaflet-container {
+  font-family: inherit;
+}
