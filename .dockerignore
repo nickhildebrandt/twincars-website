@@ -15,5 +15,4 @@ test-results
 e2e
 *.log
 README.md
-MISSING_APIS.md
 .env.example

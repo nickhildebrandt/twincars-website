@@ -31,23 +31,65 @@ const services = [
   }
 ]
 
-const articles = [
+const tires = [
   {
-    id: 'art-conti-205',
+    id: 'tire-conti-205',
     articleNumber: 'TC-CONTI-205',
-    description: 'Continental PremiumContact 6 205/55 R16',
-    unit: 'Stück',
+    brand: 'Continental',
+    model: 'PremiumContact 6',
+    width: 205,
+    aspectRatio: 55,
+    construction: 'R',
+    diameterInch: 16,
+    sizeLabel: '205/55 R16',
+    loadIndex: '91',
+    speedIndex: 'V',
+    season: 'Sommer',
+    ean: '4019238791234',
+    manufacturerPartNumber: null,
+    fuelEfficiency: 'B',
+    wetGrip: 'A',
+    noiseClass: 'B',
+    noiseDb: 71,
+    runFlat: false,
+    reinforced: false,
+    studdedWinter: false,
+    mSMarking: true,
+    snowFlake: false,
+    evCertified: false,
+    description: '',
     currentPriceNet: 129,
-    attributes: { size: '205/55 R16', season: 'Sommer', brand: 'Continental' },
+    photos: [],
     shippingOptionId: 'std'
   },
   {
-    id: 'art-bridge-225',
+    id: 'tire-bridge-225',
     articleNumber: 'TC-BS-225',
-    description: 'Bridgestone Turanza 225/45 R17',
-    unit: 'Stück',
+    brand: 'Bridgestone',
+    model: 'Turanza T005',
+    width: 225,
+    aspectRatio: 45,
+    construction: 'R',
+    diameterInch: 17,
+    sizeLabel: '225/45 R17',
+    loadIndex: '94',
+    speedIndex: 'Y',
+    season: 'Sommer',
+    ean: '3286340843911',
+    manufacturerPartNumber: null,
+    fuelEfficiency: 'A',
+    wetGrip: 'A',
+    noiseClass: 'A',
+    noiseDb: 69,
+    runFlat: false,
+    reinforced: true,
+    studdedWinter: false,
+    mSMarking: false,
+    snowFlake: false,
+    evCertified: false,
+    description: '',
     currentPriceNet: 159,
-    attributes: { size: '225/45 R17', season: 'Sommer', brand: 'Bridgestone' },
+    photos: [],
     shippingOptionId: 'std'
   }
 ]
@@ -110,6 +152,23 @@ function freeSlots(fromIso) {
   return out
 }
 
+async function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    req.on('data', (c) => chunks.push(c))
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks).toString('utf8')
+      if (!raw) return resolve({})
+      try {
+        resolve(JSON.parse(raw))
+      } catch (e) {
+        reject(e)
+      }
+    })
+    req.on('error', reject)
+  })
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`)
   res.setHeader('Content-Type', 'application/json')
@@ -118,19 +177,38 @@ const server = createServer(async (req, res) => {
     res.end(JSON.stringify({ data: { services } }))
     return
   }
-  if (req.method === 'GET' && url.pathname === '/api/public/articles') {
-    res.end(JSON.stringify({ data: { articles } }))
-    return
-  }
-  if (req.method === 'GET' && url.pathname.startsWith('/api/public/articles/')) {
+  if (req.method === 'GET' && url.pathname.startsWith('/api/public/services/')) {
     const id = url.pathname.split('/').pop()
-    const article = articles.find((a) => a.id === id)
-    if (!article) {
+    const service = services.find((s) => s.id === id)
+    if (!service) {
       res.statusCode = 404
-      res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Artikel nicht gefunden.' } }))
+      res.end(
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Leistung nicht gefunden.' }
+        })
+      )
       return
     }
-    res.end(JSON.stringify({ data: { article } }))
+    res.end(JSON.stringify({ data: { service } }))
+    return
+  }
+  if (req.method === 'GET' && url.pathname === '/api/public/tires') {
+    res.end(JSON.stringify({ data: { tires } }))
+    return
+  }
+  if (req.method === 'GET' && url.pathname.startsWith('/api/public/tires/')) {
+    const id = url.pathname.split('/').pop()
+    const tire = tires.find((t) => t.id === id)
+    if (!tire) {
+      res.statusCode = 404
+      res.end(
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Reifen nicht gefunden.' }
+        })
+      )
+      return
+    }
+    res.end(JSON.stringify({ data: { tire } }))
     return
   }
   if (req.method === 'GET' && url.pathname === '/api/public/shipping-options') {
@@ -146,14 +224,20 @@ const server = createServer(async (req, res) => {
     const vehicle = usedCars.find((v) => v.id === id)
     if (!vehicle) {
       res.statusCode = 404
-      res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Fahrzeug nicht gefunden.' } }))
+      res.end(
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Fahrzeug nicht gefunden.' }
+        })
+      )
       return
     }
     res.end(JSON.stringify({ data: { vehicle } }))
     return
   }
   if (req.method === 'GET' && url.pathname === '/api/public/free-slots') {
-    res.end(JSON.stringify({ data: { slots: freeSlots(url.searchParams.get('from')) } }))
+    res.end(
+      JSON.stringify({ data: { slots: freeSlots(url.searchParams.get('from')) } })
+    )
     return
   }
   if (req.method === 'POST' && url.pathname === '/api/public/appointments') {
@@ -164,6 +248,34 @@ const server = createServer(async (req, res) => {
           startsAt: new Date(Date.now() + 86_400_000).toISOString(),
           endsAt: new Date(Date.now() + 86_400_000 + 30 * 60 * 1000).toISOString(),
           confirmationToken: 'mock-token'
+        }
+      })
+    )
+    return
+  }
+  if (req.method === 'POST' && url.pathname === '/api/public/orders') {
+    const body = await readJsonBody(req).catch(() => ({}))
+    const lines = Array.isArray(body.lines) ? body.lines : []
+    const totalNet = lines.reduce((sum, l) => {
+      const tire = tires.find((t) => t.id === l.tireId)
+      const price = tire?.currentPriceNet ?? 0
+      const qty = Number(l.quantity) || 0
+      return sum + price * qty
+    }, 0)
+    const shipping = shippingOptions.find((o) => o.id === body.shippingOptionId)
+    const shippingNet = shipping?.priceNet ?? 0
+    const totalGross = Number(((totalNet + shippingNet) * 1.19).toFixed(2))
+    res.end(
+      JSON.stringify({
+        data: {
+          orderId: 'mock-order-1',
+          orderNumber: '2026-05-0001',
+          totalNet,
+          totalGross,
+          shippingNet,
+          estimatedDelivery: new Date(Date.now() + 5 * 86_400_000)
+            .toISOString()
+            .slice(0, 10)
         }
       })
     )
@@ -182,7 +294,11 @@ const server = createServer(async (req, res) => {
   }
 
   res.statusCode = 404
-  res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Route nicht definiert.' } }))
+  res.end(
+    JSON.stringify({
+      error: { code: 'NOT_FOUND', message: 'Route nicht definiert.' }
+    })
+  )
 })
 
 server.listen(PORT, '127.0.0.1', () => {

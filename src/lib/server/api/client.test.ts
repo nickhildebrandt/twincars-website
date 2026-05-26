@@ -21,13 +21,17 @@ vi.mock('../config', () => ({
 
 const {
   TwincarsApiError,
-  fetchPublicArticles,
   fetchPublicFreeSlots,
+  fetchPublicService,
   fetchPublicServices,
   fetchPublicShippingOptions,
+  fetchPublicTire,
+  fetchPublicTires,
+  fetchPublicUsedCar,
   fetchPublicUsedCars,
   postPublicAppointment,
-  postPublicContact
+  postPublicContact,
+  postPublicOrder
 } = await import('./client')
 
 type FetchMock = ReturnType<typeof vi.fn<typeof fetch>>
@@ -135,29 +139,70 @@ describe('api client', () => {
   })
 
   describe('GET endpoints', () => {
-    it('fetchPublicArticles unwraps the `articles` list', async () => {
+    it('fetchPublicTires unwraps the `tires` list', async () => {
       fetchMock.mockResolvedValueOnce(
         jsonResponse({
           data: {
-            articles: [
+            tires: [
               {
-                id: 'a-1',
+                id: 't-1',
                 articleNumber: 'TC-1',
-                description: 'Reifen',
-                unit: 'Stück',
-                currentPriceNet: 100,
-                attributes: {},
-                shippingOptionId: null
+                brand: 'Continental',
+                model: 'PremiumContact 6'
               }
             ]
           }
         })
       )
 
-      const articles = await fetchPublicArticles()
+      const tires = await fetchPublicTires()
 
-      expect(articles).toHaveLength(1)
-      expect(articles[0].id).toBe('a-1')
+      expect(tires).toHaveLength(1)
+      expect(tires[0].id).toBe('t-1')
+    })
+
+    it('fetchPublicTires forwards filters as query params', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ data: { tires: [] } }))
+
+      await fetchPublicTires({
+        q: 'continental',
+        size: '205/55R16',
+        season: 'Sommer',
+        brand: 'Continental',
+        maxPriceNet: 200
+      })
+
+      const url = String(fetchMock.mock.calls[0][0])
+      expect(url).toContain('/api/public/tires?')
+      expect(url).toContain('q=continental')
+      expect(url).toContain('size=205%2F55R16')
+      expect(url).toContain('season=Sommer')
+      expect(url).toContain('brand=Continental')
+      expect(url).toContain('maxPriceNet=200')
+    })
+
+    it('fetchPublicTire unwraps the `tire` object', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ data: { tire: { id: 't-1' } } })
+      )
+
+      const tire = await fetchPublicTire('t-1')
+
+      expect(tire.id).toBe('t-1')
+      const url = String(fetchMock.mock.calls[0][0])
+      expect(url).toBe('http://api.test.local/api/public/tires/t-1')
+    })
+
+    it('fetchPublicService unwraps the `service` object', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ data: { service: { id: 's-1' } } })
+      )
+
+      const service = await fetchPublicService('s-1')
+
+      expect(service.id).toBe('s-1')
+      const url = String(fetchMock.mock.calls[0][0])
+      expect(url).toBe('http://api.test.local/api/public/services/s-1')
     })
 
     it('fetchPublicShippingOptions unwraps the `options` list', async () => {
@@ -178,6 +223,18 @@ describe('api client', () => {
       const cars = await fetchPublicUsedCars()
 
       expect(cars).toEqual([{ id: 'v-1' }])
+    })
+
+    it('fetchPublicUsedCar unwraps the `vehicle` object', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ data: { vehicle: { id: 'v-1' } } })
+      )
+
+      const car = await fetchPublicUsedCar('v-1')
+
+      expect(car.id).toBe('v-1')
+      const url = String(fetchMock.mock.calls[0][0])
+      expect(url).toBe('http://api.test.local/api/public/used-cars/v-1')
     })
 
     it('fetchPublicFreeSlots passes query params', async () => {
@@ -258,6 +315,38 @@ describe('api client', () => {
       expect(err).toBeInstanceOf(TwincarsApiError)
       expect(err.status).toBe(409)
       expect(err.code).toBe('SLOT_TAKEN')
+    })
+
+    it('postPublicOrder posts the order body', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            orderId: 'o-1',
+            orderNumber: '2026-05-0001',
+            totalNet: 320,
+            totalGross: 380.8,
+            shippingNet: 9.9,
+            estimatedDelivery: '2026-06-01'
+          }
+        })
+      )
+
+      const result = await postPublicOrder({
+        customerEmail: 'a@b.de',
+        customerName: 'A B',
+        deliveryAddress: { street: 'Hauptstr. 1', zip: '12345', city: 'Bernau' },
+        shippingOptionId: 'ship-1',
+        lines: [{ tireId: 't-1', quantity: 4 }]
+      })
+
+      expect(result.orderNumber).toBe('2026-05-0001')
+      const [url, init] = fetchMock.mock.calls[0]
+      expect(String(url)).toBe('http://api.test.local/api/public/orders')
+      expect(init?.method).toBe('POST')
+      expect(JSON.parse(String(init?.body))).toMatchObject({
+        deliveryAddress: { city: 'Bernau' },
+        lines: [{ tireId: 't-1', quantity: 4 }]
+      })
     })
 
     it('postPublicContact posts to /api/public/contact', async () => {

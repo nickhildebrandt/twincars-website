@@ -2,9 +2,7 @@
  * @file Remote functions for the used-car portfolio (`/gebrauchtwagen`).
  *
  *  - `getUsedCars`   list of every vehicle currently for sale.
- *  - `getUsedCar`    single vehicle by id (resolved client-side
- *                    from the list, until the manager exposes
- *                    `/api/public/used-cars/:id`).
+ *  - `getUsedCar`    single vehicle by id.
  *  - `sendInquiry`   form mutation that forwards a customer inquiry
  *                    about a specific vehicle.
  */
@@ -14,6 +12,7 @@ import { error } from '@sveltejs/kit'
 import { form, query } from '$app/server'
 import {
   TwincarsApiError,
+  fetchPublicUsedCar,
   fetchPublicUsedCars,
   postPublicContact
 } from '$lib/server/api/client'
@@ -29,9 +28,7 @@ export const getUsedCars = query(async (): Promise<PublicUsedCar[]> => {
 })
 
 /**
- * Reads a single used car by id. Until the manager exposes a dedicated
- * detail endpoint (see `MISSING_APIS.md`), we resolve it client-side
- * from the full list — fine for the expected inventory size of < 50.
+ * Reads a single used car by id from the dedicated detail endpoint.
  *
  * @param id  Vehicle id (uuid).
  * @returns   Promise resolving to the matched vehicle.
@@ -40,12 +37,14 @@ export const getUsedCars = query(async (): Promise<PublicUsedCar[]> => {
 export const getUsedCar = query(
   v.pipe(v.string('Fahrzeug-ID erforderlich.'), v.minLength(1)),
   async (id): Promise<PublicUsedCar> => {
-    const all = await fetchPublicUsedCars()
-    const found = all.find((c) => c.id === id)
-    if (!found) {
-      error(404, 'Fahrzeug nicht gefunden.')
+    try {
+      return await fetchPublicUsedCar(id)
+    } catch (e) {
+      if (e instanceof TwincarsApiError && e.status === 404) {
+        error(404, 'Fahrzeug nicht gefunden.')
+      }
+      throw e
     }
-    return found
   }
 )
 

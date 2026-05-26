@@ -1,10 +1,10 @@
 /**
  * @file Browser-side cart store for the Reifenshop.
  *
- * The cart lives in `localStorage` (key `tc.cart.v1`) so it survives
- * page reloads, but we never persist it on the server. Checkout takes a
- * snapshot of the cart via a hidden form field; the server has no
- * knowledge of the shopping cart until the order is placed.
+ * The cart lives in `localStorage` (key `tc.cart.v2`) so it survives
+ * page reloads, but we never persist it on the server. Checkout sends a
+ * minimal snapshot (`{ tireId, quantity }[]`) via a hidden form field;
+ * the manager re-resolves prices and totals server-side.
  *
  * The store is a Svelte 5 rune-backed object exported through the
  * factory `createCart()` — instantiated once in
@@ -13,23 +13,27 @@
  */
 
 import { browser } from '$app/environment'
-import type { PublicArticle } from '$lib/server/api/types'
+import type { PublicTire } from '$lib/server/api/types'
 
-/** A single cart line — the article snapshot plus the quantity. */
+/** A single cart line — the tire snapshot plus the quantity. */
 export interface CartLine {
-  /** Article id (uuid). */
+  /** Tire id (uuid). */
   id: string
   /** Article number (SKU) at time of adding. */
-  articleNumber: string | null
-  /** Human-readable description / title. */
-  description: string
+  articleNumber: string
+  /** Brand (e.g. "Continental"). */
+  brand: string
+  /** Model (e.g. "PremiumContact 6"). */
+  model: string
+  /** Size label (e.g. "205/55 R16"). */
+  sizeLabel: string
+  /** Season (`Sommer` | `Winter` | `Ganzjahres`). */
+  season: PublicTire['season']
   /** Unit price (net, EUR) at time of adding. */
   unitPriceNet: number
   /** Selected quantity. */
   quantity: number
-  /** Free-form attributes (size, season, …) at time of adding. */
-  attributes: Record<string, string | number | boolean | null>
-  /** Shipping group of the article (drives the available shipping options). */
+  /** Shipping group of the tire (drives the available shipping options). */
   shippingOptionId: string | null
 }
 
@@ -44,7 +48,7 @@ export interface CartTotals {
 }
 
 /** LocalStorage key used to persist the cart between visits. */
-const STORAGE_KEY = 'tc.cart.v1'
+const STORAGE_KEY = 'tc.cart.v2'
 
 /**
  * Reads the cart from `localStorage`. Returns an empty cart in any
@@ -110,11 +114,11 @@ export interface CartStore {
   readonly lines: CartLine[]
   /** Reactive totals derived from the lines. */
   readonly totals: CartTotals
-  /** Adds (or increases) a line for the given article. */
-  add(article: PublicArticle, qty?: number): void
+  /** Adds (or increases) a line for the given tire. */
+  add(tire: PublicTire, qty?: number): void
   /** Replaces the quantity of an existing line. Removes the line at qty ≤ 0. */
   setQuantity(id: string, qty: number): void
-  /** Removes the line with the given article id. */
+  /** Removes the line with the given tire id. */
   remove(id: string): void
   /** Removes every line. */
   clear(): void
@@ -141,21 +145,23 @@ export function createCart(): CartStore {
     get totals() {
       return totals
     },
-    add(article: PublicArticle, qty = 1) {
+    add(tire: PublicTire, qty = 1) {
       if (qty <= 0) return
-      if (article.currentPriceNet == null) return
-      const existing = lines.find((l) => l.id === article.id)
+      if (tire.currentPriceNet == null) return
+      const existing = lines.find((l) => l.id === tire.id)
       if (existing) {
         existing.quantity += qty
       } else {
         lines.push({
-          id: article.id,
-          articleNumber: article.articleNumber,
-          description: article.description,
-          unitPriceNet: article.currentPriceNet,
+          id: tire.id,
+          articleNumber: tire.articleNumber,
+          brand: tire.brand,
+          model: tire.model,
+          sizeLabel: tire.sizeLabel,
+          season: tire.season,
+          unitPriceNet: tire.currentPriceNet,
           quantity: qty,
-          attributes: { ...article.attributes },
-          shippingOptionId: article.shippingOptionId
+          shippingOptionId: tire.shippingOptionId
         })
       }
       syncStorage()

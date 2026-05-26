@@ -19,12 +19,15 @@ import type {
   ApiOk,
   PublicAppointmentInput,
   PublicAppointmentResult,
-  PublicArticle,
   PublicContactInput,
   PublicContactResult,
   PublicFreeSlot,
+  PublicOrderInput,
+  PublicOrderResult,
   PublicService,
   PublicShippingOption,
+  PublicTire,
+  PublicTireFilters,
   PublicUsedCar
 } from './types'
 
@@ -122,48 +125,68 @@ function qs(params: Record<string, string | number | undefined | null>): string 
 // One function per public endpoint.
 // ----------------------------------------------------------------------------
 
-/**
- * Fetches the catalog of bookable workshop services.
- *
- * @returns Promise resolving to an array of services (may be empty).
- */
+/** Fetches the catalogue of bookable workshop services. */
 export function fetchPublicServices(): Promise<PublicService[]> {
   return request<{ services: PublicService[] }>('/api/public/services').then(
     (d) => d.services
   )
 }
 
-/**
- * Fetches all online-sellable articles (tires, accessories, …).
- *
- * @returns Promise resolving to an array of articles (may be empty).
- */
-export function fetchPublicArticles(): Promise<PublicArticle[]> {
-  return request<{ articles: PublicArticle[] }>('/api/public/articles').then(
-    (d) => d.articles
-  )
+/** Fetches a single bookable workshop service by id. */
+export function fetchPublicService(id: string): Promise<PublicService> {
+  return request<{ service: PublicService }>(
+    `/api/public/services/${encodeURIComponent(id)}`
+  ).then((d) => d.service)
 }
 
 /**
- * Fetches the available shipping options for the online shop.
+ * Fetches the tire catalogue, optionally narrowed by the documented
+ * filters (`q`, `size`, `season`, `brand`, `maxPriceNet`).
  *
- * @returns Promise resolving to an array of shipping options.
+ * @param filters  Optional query parameters; omitted keys default to
+ *                 "any" on the server side.
  */
+export function fetchPublicTires(
+  filters: PublicTireFilters = {}
+): Promise<PublicTire[]> {
+  const query = qs({
+    q: filters.q,
+    size: filters.size,
+    season: filters.season,
+    brand: filters.brand,
+    maxPriceNet: filters.maxPriceNet
+  })
+  return request<{ tires: PublicTire[] }>(`/api/public/tires${query}`).then(
+    (d) => d.tires
+  )
+}
+
+/** Fetches a single tire by id. */
+export function fetchPublicTire(id: string): Promise<PublicTire> {
+  return request<{ tire: PublicTire }>(
+    `/api/public/tires/${encodeURIComponent(id)}`
+  ).then((d) => d.tire)
+}
+
+/** Fetches the available shipping options for the online shop. */
 export function fetchPublicShippingOptions(): Promise<PublicShippingOption[]> {
   return request<{ options: PublicShippingOption[] }>(
     '/api/public/shipping-options'
   ).then((d) => d.options)
 }
 
-/**
- * Fetches the used-car (Gebrauchtwagen) inventory currently for sale.
- *
- * @returns Promise resolving to an array of vehicles with embedded photos.
- */
+/** Fetches the used-car inventory currently for sale. */
 export function fetchPublicUsedCars(): Promise<PublicUsedCar[]> {
   return request<{ vehicles: PublicUsedCar[] }>('/api/public/used-cars').then(
     (d) => d.vehicles
   )
+}
+
+/** Fetches a single used car by id. */
+export function fetchPublicUsedCar(id: string): Promise<PublicUsedCar> {
+  return request<{ vehicle: PublicUsedCar }>(
+    `/api/public/used-cars/${encodeURIComponent(id)}`
+  ).then((d) => d.vehicle)
 }
 
 /**
@@ -173,7 +196,6 @@ export function fetchPublicUsedCars(): Promise<PublicUsedCar[]> {
  * @param params.to               ISO datetime (exclusive upper bound, max 60 days from).
  * @param params.durationMinutes  Override for slot length (1–480). Default 30.
  * @param params.service          Service id whose `attributes.durationMinutes` wins.
- * @returns Promise resolving to an ordered list of 15-minute-aligned slots.
  */
 export function fetchPublicFreeSlots(params: {
   from: string
@@ -195,8 +217,6 @@ export function fetchPublicFreeSlots(params: {
 /**
  * Books a new appointment.
  *
- * @param input  Customer + slot + (optional) service + notes.
- * @returns      Promise resolving to the created appointment metadata.
  * @throws TwincarsApiError 409 if the slot was taken between fetch and book.
  */
 export function postPublicAppointment(
@@ -208,16 +228,17 @@ export function postPublicAppointment(
   })
 }
 
-/**
- * Submits a contact / inquiry form.
- *
- * **NOTE:** `/api/public/contact` is not yet implemented in twincars-manager
- * — see `MISSING_APIS.md`. Once the manager exposes the endpoint, this
- * function will start working without further changes here.
- *
- * @param input  Contact-form payload.
- * @returns      Inquiry metadata (id + timestamp).
- */
+/** Submits a tire order. */
+export function postPublicOrder(
+  input: PublicOrderInput
+): Promise<PublicOrderResult> {
+  return request<PublicOrderResult>('/api/public/orders', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  })
+}
+
+/** Submits a contact / inquiry form. */
 export function postPublicContact(
   input: PublicContactInput
 ): Promise<PublicContactResult> {

@@ -1,17 +1,40 @@
 import { describe, expect, it } from 'vitest'
-import { attr, formatEur, specLine, uniqueAttr } from './format'
-import type { PublicArticle } from '$lib/server/api/types'
+import { formatEur, tireSpecLine, tireTitle, uniqueValues } from './format'
+import type { PublicTire } from '$lib/server/api/types'
 
-const article = (overrides: Partial<PublicArticle> = {}): PublicArticle => ({
-  id: 'a-1',
-  articleNumber: 'TC-CON-2055516',
-  description: 'Continental PremiumContact 6',
-  unit: 'Stück',
-  currentPriceNet: 129.0,
-  attributes: { size: '205/55 R16', season: 'Sommer', brand: 'Continental' },
-  shippingOptionId: null,
-  ...overrides
-})
+function tire(overrides: Partial<PublicTire> = {}): PublicTire {
+  return {
+    id: 't-1',
+    articleNumber: 'TC-CON-2055516',
+    brand: 'Continental',
+    model: 'PremiumContact 6',
+    width: 205,
+    aspectRatio: 55,
+    construction: 'R',
+    diameterInch: 16,
+    sizeLabel: '205/55 R16',
+    loadIndex: '91',
+    speedIndex: 'V',
+    season: 'Sommer',
+    ean: null,
+    manufacturerPartNumber: null,
+    fuelEfficiency: 'B',
+    wetGrip: 'A',
+    noiseClass: 'B',
+    noiseDb: 71,
+    runFlat: false,
+    reinforced: false,
+    studdedWinter: false,
+    mSMarking: false,
+    snowFlake: false,
+    evCertified: false,
+    description: '',
+    currentPriceNet: 129,
+    photos: [],
+    shippingOptionId: null,
+    ...overrides
+  }
+}
 
 describe('formatEur', () => {
   it('formats EUR amounts', () => {
@@ -22,41 +45,42 @@ describe('formatEur', () => {
   })
 })
 
-describe('attr', () => {
-  it('returns string attributes', () => {
-    expect(attr(article(), 'size')).toBe('205/55 R16')
-  })
-  it('returns null for missing attributes', () => {
-    expect(attr(article(), 'doesNotExist')).toBeNull()
-  })
-  it('coerces numbers and booleans', () => {
-    const a = article({ attributes: { weight: 9, recommended: true } })
-    expect(attr(a, 'weight')).toBe('9')
-    expect(attr(a, 'recommended')).toBe('true')
+describe('tireTitle', () => {
+  it('joins brand and model', () => {
+    expect(tireTitle(tire())).toBe('Continental PremiumContact 6')
   })
 })
 
-describe('uniqueAttr', () => {
+describe('tireSpecLine', () => {
+  it('joins size, season and brand with separators', () => {
+    expect(tireSpecLine(tire())).toBe('205/55 R16 · Sommer · Continental')
+  })
+  it('drops empty fields', () => {
+    expect(tireSpecLine(tire({ brand: '' }))).toBe('205/55 R16 · Sommer')
+  })
+})
+
+describe('uniqueValues', () => {
   it('returns sorted unique values', () => {
     const list = [
-      article({ id: 'a', attributes: { brand: 'Continental' } }),
-      article({ id: 'b', attributes: { brand: 'Bridgestone' } }),
-      article({ id: 'c', attributes: { brand: 'Continental' } }),
-      article({ id: 'd', attributes: {} })
+      tire({ id: 'a', brand: 'Continental' }),
+      tire({ id: 'b', brand: 'Bridgestone' }),
+      tire({ id: 'c', brand: 'Continental' }),
+      tire({ id: 'd', brand: 'Michelin' })
     ]
-    expect(uniqueAttr(list, 'brand')).toEqual(['Bridgestone', 'Continental'])
+    expect(uniqueValues(list, 'brand')).toEqual([
+      'Bridgestone',
+      'Continental',
+      'Michelin'
+    ])
   })
-})
 
-describe('specLine', () => {
-  it('joins size, season and brand with separators', () => {
-    expect(specLine(article())).toBe('205/55 R16 · Sommer · Continental')
-  })
-  it('falls back to profile when size missing', () => {
-    const a = article({ attributes: { profile: 'PremiumContact 6' } })
-    expect(specLine(a)).toBe('PremiumContact 6')
-  })
-  it('returns empty string when no attributes present', () => {
-    expect(specLine(article({ attributes: {} }))).toBe('')
+  it('ignores null and empty values', () => {
+    const list = [
+      tire({ id: 'a', loadIndex: '91' }),
+      tire({ id: 'b', loadIndex: null }),
+      tire({ id: 'c', loadIndex: '94' })
+    ]
+    expect(uniqueValues(list, 'loadIndex')).toEqual(['91', '94'])
   })
 })

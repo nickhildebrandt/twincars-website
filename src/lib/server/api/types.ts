@@ -1,9 +1,9 @@
 /**
- * @file Shared types for the Twincars Manager public API responses.
+ * @file Shared types for the Twincars Manager public API.
  *
- * These types mirror the shapes returned by the Twincars Manager
- * project (see /home/nick/tc/twincars-manager/src/lib/server/public-api.ts).
- * Keep them in sync if the manager API changes.
+ * Mirror of the response shapes documented at
+ * `https://<manager-host>/api/public` (see project docs). Keep in
+ * sync if the upstream API changes — there is no codegen.
  */
 
 /** Envelope wrapping every successful public-API response. */
@@ -17,8 +17,8 @@ export interface ApiErr {
 }
 
 /**
- * Free-form attribute bag attached to items (services and articles).
- * Tire-specific keys (size, profile, season, DOT year) live here.
+ * Free-form attribute bag attached to services. Tire-specific data
+ * lives on `PublicTire` itself; services keep this open-ended.
  */
 export type ItemAttributes = Record<string, string | number | boolean | null>
 
@@ -32,15 +32,51 @@ export interface PublicService {
   attributes: ItemAttributes
 }
 
-/** A single online-sellable product (tire, accessory, ...). */
-export interface PublicArticle {
+/** A photo attached to a tire (base64 data-URL in `url`). */
+export interface PublicTirePhoto {
+  mime: string
+  url: string
+}
+
+/** A single tire from the public catalogue. */
+export interface PublicTire {
   id: string
-  articleNumber: string | null
+  articleNumber: string
+  brand: string
+  model: string
+  width: number
+  aspectRatio: number
+  construction: string
+  diameterInch: number
+  sizeLabel: string
+  loadIndex: string | null
+  speedIndex: string | null
+  season: 'Sommer' | 'Winter' | 'Ganzjahres'
+  ean: string | null
+  manufacturerPartNumber: string | null
+  fuelEfficiency: string | null
+  wetGrip: string | null
+  noiseClass: string | null
+  noiseDb: number | null
+  runFlat: boolean
+  reinforced: boolean
+  studdedWinter: boolean
+  mSMarking: boolean
+  snowFlake: boolean
+  evCertified: boolean
   description: string
-  unit: string
   currentPriceNet: number | null
-  attributes: ItemAttributes
+  photos: PublicTirePhoto[]
   shippingOptionId: string | null
+}
+
+/** Filter parameters accepted by `GET /tires`. */
+export interface PublicTireFilters {
+  q?: string
+  size?: string
+  season?: 'Sommer' | 'Winter' | 'Ganzjahres'
+  brand?: string
+  maxPriceNet?: number
 }
 
 /** A shipping option offered at checkout. */
@@ -52,7 +88,11 @@ export interface PublicShippingOption {
   freeAboveNet: number | null
 }
 
-/** A used-car photo (data-URL — see Manager `vehicle-service.ts`). */
+/**
+ * A used-car photo. The API keeps the historical `dataUrl` key for
+ * used cars (vs. `url` on tire photos) — that's a documented
+ * compatibility wart, not a typo.
+ */
 export interface PublicUsedCarPhoto {
   mime: string
   dataUrl: string
@@ -86,7 +126,7 @@ export interface PublicAppointmentResult {
   confirmationToken: string
 }
 
-/** Input shape for `/api/public/appointments`. */
+/** Input shape for `POST /api/public/appointments`. */
 export interface PublicAppointmentInput {
   customerEmail: string
   customerName: string
@@ -97,12 +137,44 @@ export interface PublicAppointmentInput {
   notes?: string
 }
 
+/** Address block sent with `POST /api/public/orders`. */
+export interface PublicOrderAddress {
+  street: string
+  zip: string
+  city: string
+}
+
+/** A single line item on an outgoing order. */
+export interface PublicOrderLineInput {
+  tireId: string
+  quantity: number
+}
+
+/** Input shape for `POST /api/public/orders`. */
+export interface PublicOrderInput {
+  customerEmail: string
+  customerName: string
+  customerPhone?: string
+  deliveryAddress: PublicOrderAddress
+  shippingOptionId: string
+  lines: PublicOrderLineInput[]
+  notes?: string
+}
+
+/** Response payload after a successful order submission. */
+export interface PublicOrderResult {
+  orderId: string
+  orderNumber: string
+  totalNet: number
+  totalGross: number
+  shippingNet: number
+  estimatedDelivery: string | null
+}
+
 /**
- * Input shape for `/api/public/contact` — used both for general
- * contact form submissions and for used-car / shop product inquiries.
- *
- * NOTE: This endpoint is not yet implemented in twincars-manager.
- * See `MISSING_APIS.md` in the project root.
+ * Input shape for `POST /api/public/contact` — covers the general
+ * contact form, vehicle inquiries, tire inquiries and generic
+ * questions through the `referenceType` discriminator.
  */
 export interface PublicContactInput {
   customerEmail: string
@@ -110,13 +182,13 @@ export interface PublicContactInput {
   customerPhone?: string
   subject: string
   message: string
-  /** Optional reference — used-car id, article id, … */
+  /** Optional reference — used-car id, tire id, article id, … */
   referenceId?: string
-  /** What the reference points to (`used-car`, `article`, `general`). */
-  referenceType?: 'used-car' | 'article' | 'general'
+  /** What `referenceId` points to. */
+  referenceType?: 'used-car' | 'tire' | 'article' | 'general'
 }
 
-/** Result of a successful `/api/public/contact` submission. */
+/** Result of a successful `POST /api/public/contact` submission. */
 export interface PublicContactResult {
   inquiryId: string
   receivedAt: string

@@ -9,7 +9,7 @@
   import { ArrowLeft, Minus, Plus, Trash2 } from '@lucide/svelte'
   import Seo from '$components/Seo.svelte'
   import { useCart } from '$features/reifenshop/cart-context.svelte'
-  import { formatEur } from '$features/reifenshop/format'
+  import { formatEur, tireTitle } from '$features/reifenshop/format'
 
   const cart = useCart()
 </script>
@@ -41,12 +41,12 @@
       <div class="card bg-base-100 border-base-200 mt-6 border" data-testid="cart-lines">
         <ul class="divide-base-200 divide-y">
           {#each cart.lines as line (line.id)}
+            {@const title = tireTitle(line)}
             <li class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
               <div>
-                <p class="font-semibold">{line.description}</p>
-                {#if line.articleNumber}
-                  <p class="text-base-content/60 text-xs">Art.-Nr. {line.articleNumber}</p>
-                {/if}
+                <p class="font-semibold">{title}</p>
+                <p class="text-base-content/60 text-xs">{line.sizeLabel} · {line.season}</p>
+                <p class="text-base-content/60 text-xs">Art.-Nr. {line.articleNumber}</p>
                 <p class="text-base-content/60 text-xs">{formatEur(line.unitPriceNet)} / Stück</p>
               </div>
               <div class="join">
@@ -54,7 +54,7 @@
                   type="button"
                   class="btn btn-sm join-item"
                   onclick={() => cart.setQuantity(line.id, line.quantity - 1)}
-                  aria-label="Menge verringern für {line.description}"
+                  aria-label="Menge verringern für {title}"
                 >
                   <Minus class="size-4" aria-hidden="true" />
                 </button>
@@ -65,13 +65,13 @@
                   value={line.quantity}
                   onchange={(e) => cart.setQuantity(line.id, Number((e.currentTarget as HTMLInputElement).value) || 1)}
                   class="input input-bordered input-sm join-item w-16 text-center"
-                  aria-label="Menge für {line.description}"
+                  aria-label="Menge für {title}"
                 />
                 <button
                   type="button"
                   class="btn btn-sm join-item"
                   onclick={() => cart.setQuantity(line.id, line.quantity + 1)}
-                  aria-label="Menge erhöhen für {line.description}"
+                  aria-label="Menge erhöhen für {title}"
                 >
                   <Plus class="size-4" aria-hidden="true" />
                 </button>
@@ -83,7 +83,7 @@
                 type="button"
                 class="btn btn-ghost btn-sm text-error"
                 onclick={() => cart.remove(line.id)}
-                aria-label="Artikel entfernen: {line.description}"
+                aria-label="Artikel entfernen: {title}"
               >
                 <Trash2 class="size-4" aria-hidden="true" />
               </button>

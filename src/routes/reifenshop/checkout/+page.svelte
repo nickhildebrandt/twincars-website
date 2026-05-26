@@ -14,7 +14,7 @@
   import { ArrowLeft, CheckCircle2 } from '@lucide/svelte'
   import Seo from '$components/Seo.svelte'
   import { useCart } from '$features/reifenshop/cart-context.svelte'
-  import { formatEur } from '$features/reifenshop/format'
+  import { formatEur, tireTitle } from '$features/reifenshop/format'
   import { getShippingOptions, placeOrder } from '../reifenshop.remote'
 
   const cart = useCart()
@@ -22,16 +22,13 @@
   /** Selected shipping option id. Empty = nothing chosen yet. */
   let shippingId = $state<string>('')
 
-  /** Reactive JSON snapshot of the cart — passed via a hidden form field. */
+  /**
+   * Reactive minimal cart snapshot — only `tireId` + `quantity` are sent
+   * to the server. Prices and totals are re-resolved by the manager.
+   */
   const cartJson = $derived(
     JSON.stringify(
-      cart.lines.map((l) => ({
-        id: l.id,
-        articleNumber: l.articleNumber,
-        description: l.description,
-        unitPriceNet: l.unitPriceNet,
-        quantity: l.quantity
-      }))
+      cart.lines.map((l) => ({ tireId: l.id, quantity: l.quantity }))
     )
   )
 
@@ -70,10 +67,18 @@
             Wir haben Ihre Bestellung erhalten und melden uns in Kürze mit der Zahlungsabwicklung und einem Liefertermin.
           </p>
           <dl class="bg-base-200 mt-4 grid w-full grid-cols-3 gap-2 rounded-xl p-4 text-sm">
-            <dt class="text-base-content/60">Referenz</dt>
-            <dd class="col-span-2 font-mono text-xs">{r.orderRef}</dd>
-            <dt class="text-base-content/60">Zwischensumme</dt>
-            <dd class="col-span-2 font-semibold">{formatEur(r.totalNet)}</dd>
+            <dt class="text-base-content/60">Bestellnummer</dt>
+            <dd class="col-span-2 font-mono">{r.orderNumber}</dd>
+            <dt class="text-base-content/60">Versand</dt>
+            <dd class="col-span-2 font-medium">{formatEur(r.shippingNet)}</dd>
+            <dt class="text-base-content/60">Summe netto</dt>
+            <dd class="col-span-2 font-medium">{formatEur(r.totalNet)}</dd>
+            <dt class="text-base-content/60">Summe brutto</dt>
+            <dd class="col-span-2 font-semibold">{formatEur(r.totalGross)}</dd>
+            {#if r.estimatedDelivery}
+              <dt class="text-base-content/60">Vorauss. Lieferung</dt>
+              <dd class="col-span-2 font-medium">{r.estimatedDelivery}</dd>
+            {/if}
           </dl>
           <div class="mt-4 flex gap-3">
             <a href="/" class="btn btn-ghost">Zur Startseite</a>
@@ -273,7 +278,7 @@
             <ul class="divide-base-200 mt-2 divide-y text-sm">
               {#each cart.lines as line (line.id)}
                 <li class="flex items-start justify-between gap-3 py-2">
-                  <span>{line.quantity}× {line.description}</span>
+                  <span>{line.quantity}× {tireTitle(line)} <span class="text-base-content/60">({line.sizeLabel})</span></span>
                   <span class="font-medium">{formatEur(line.unitPriceNet * line.quantity)}</span>
                 </li>
               {/each}

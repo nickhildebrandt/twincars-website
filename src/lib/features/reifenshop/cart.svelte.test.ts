@@ -6,16 +6,37 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { flushSync } from 'svelte'
 import { createCart } from './cart.svelte'
-import type { PublicArticle } from '$lib/server/api/types'
+import type { PublicTire } from '$lib/server/api/types'
 
-function makeArticle(overrides: Partial<PublicArticle> = {}): PublicArticle {
+function makeTire(overrides: Partial<PublicTire> = {}): PublicTire {
   return {
-    id: 'a-1',
-    articleNumber: 'TC-1',
-    description: 'Sommerreifen 205/55 R16',
-    unit: 'Stück',
+    id: 't-1',
+    articleNumber: 'TC-CON-2055516',
+    brand: 'Continental',
+    model: 'PremiumContact 6',
+    width: 205,
+    aspectRatio: 55,
+    construction: 'R',
+    diameterInch: 16,
+    sizeLabel: '205/55 R16',
+    loadIndex: '91',
+    speedIndex: 'V',
+    season: 'Sommer',
+    ean: null,
+    manufacturerPartNumber: null,
+    fuelEfficiency: 'B',
+    wetGrip: 'A',
+    noiseClass: 'B',
+    noiseDb: 71,
+    runFlat: false,
+    reinforced: false,
+    studdedWinter: false,
+    mSMarking: false,
+    snowFlake: false,
+    evCertified: false,
+    description: '',
     currentPriceNet: 100,
-    attributes: { size: '205/55 R16' },
+    photos: [],
     shippingOptionId: 'std',
     ...overrides
   }
@@ -56,10 +77,12 @@ describe('createCart', () => {
   it('adds a new line with default quantity 1', () => {
     const { result: cart, dispose } = withRoot(() => createCart())
     try {
-      cart.add(makeArticle())
+      cart.add(makeTire())
       flushSync()
       expect(cart.lines).toHaveLength(1)
       expect(cart.lines[0].quantity).toBe(1)
+      expect(cart.lines[0].brand).toBe('Continental')
+      expect(cart.lines[0].sizeLabel).toBe('205/55 R16')
       expect(cart.totals.subtotalNet).toBe(100)
     } finally {
       dispose()
@@ -69,8 +92,8 @@ describe('createCart', () => {
   it('merges duplicate adds into the same line', () => {
     const { result: cart, dispose } = withRoot(() => createCart())
     try {
-      cart.add(makeArticle(), 2)
-      cart.add(makeArticle(), 3)
+      cart.add(makeTire(), 2)
+      cart.add(makeTire(), 3)
       flushSync()
       expect(cart.lines).toHaveLength(1)
       expect(cart.lines[0].quantity).toBe(5)
@@ -83,8 +106,8 @@ describe('createCart', () => {
   it('ignores adds with non-positive quantities', () => {
     const { result: cart, dispose } = withRoot(() => createCart())
     try {
-      cart.add(makeArticle(), 0)
-      cart.add(makeArticle(), -3)
+      cart.add(makeTire(), 0)
+      cart.add(makeTire(), -3)
       flushSync()
       expect(cart.lines).toHaveLength(0)
     } finally {
@@ -92,10 +115,10 @@ describe('createCart', () => {
     }
   })
 
-  it('ignores articles without a price', () => {
+  it('ignores tires without a price', () => {
     const { result: cart, dispose } = withRoot(() => createCart())
     try {
-      cart.add(makeArticle({ currentPriceNet: null }))
+      cart.add(makeTire({ currentPriceNet: null }))
       flushSync()
       expect(cart.lines).toHaveLength(0)
     } finally {
@@ -106,12 +129,12 @@ describe('createCart', () => {
   it('setQuantity replaces an existing quantity and removes at <= 0', () => {
     const { result: cart, dispose } = withRoot(() => createCart())
     try {
-      cart.add(makeArticle(), 3)
+      cart.add(makeTire(), 3)
       flushSync()
-      cart.setQuantity('a-1', 7)
+      cart.setQuantity('t-1', 7)
       flushSync()
       expect(cart.lines[0].quantity).toBe(7)
-      cart.setQuantity('a-1', 0)
+      cart.setQuantity('t-1', 0)
       flushSync()
       expect(cart.lines).toHaveLength(0)
     } finally {
@@ -122,13 +145,13 @@ describe('createCart', () => {
   it('remove() drops a specific line', () => {
     const { result: cart, dispose } = withRoot(() => createCart())
     try {
-      cart.add(makeArticle({ id: 'a-1' }))
-      cart.add(makeArticle({ id: 'a-2' }))
+      cart.add(makeTire({ id: 't-1' }))
+      cart.add(makeTire({ id: 't-2' }))
       flushSync()
-      cart.remove('a-1')
+      cart.remove('t-1')
       flushSync()
       expect(cart.lines).toHaveLength(1)
-      expect(cart.lines[0].id).toBe('a-2')
+      expect(cart.lines[0].id).toBe('t-2')
     } finally {
       dispose()
     }
@@ -137,8 +160,8 @@ describe('createCart', () => {
   it('clear() empties the cart', () => {
     const { result: cart, dispose } = withRoot(() => createCart())
     try {
-      cart.add(makeArticle({ id: 'a-1' }))
-      cart.add(makeArticle({ id: 'a-2' }))
+      cart.add(makeTire({ id: 't-1' }))
+      cart.add(makeTire({ id: 't-2' }))
       flushSync()
       cart.clear()
       flushSync()
@@ -152,9 +175,9 @@ describe('createCart', () => {
   it('persists state to localStorage', () => {
     const { result: cart, dispose } = withRoot(() => createCart())
     try {
-      cart.add(makeArticle(), 2)
+      cart.add(makeTire(), 2)
       flushSync()
-      const raw = window.localStorage.getItem('tc.cart.v1')
+      const raw = window.localStorage.getItem('tc.cart.v2')
       expect(raw).toBeTruthy()
       expect(JSON.parse(raw!)).toHaveLength(1)
     } finally {
@@ -165,7 +188,7 @@ describe('createCart', () => {
   it('rehydrates lines from localStorage on next instance', () => {
     const { result: a, dispose: disposeA } = withRoot(() => createCart())
     try {
-      a.add(makeArticle(), 4)
+      a.add(makeTire(), 4)
       flushSync()
     } finally {
       disposeA()

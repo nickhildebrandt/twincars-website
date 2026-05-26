@@ -2,17 +2,18 @@
   /**
    * Reifenshop catalogue (`/reifenshop`).
    *
-   * Loads articles through `getArticles()` and shows a filterable grid.
+   * Loads tires through `getTires()` and shows a filterable grid.
    * Filters (size / season / brand / price range / search) are
-   * client-side — the manager's public articles endpoint doesn't accept
-   * filter parameters yet (see MISSING_APIS.md).
+   * client-side; the public API also supports these as query params,
+   * but client-side filtering keeps the UX instant for the expected
+   * catalogue size.
    */
   import { Filter, RotateCw, ShoppingCart } from '@lucide/svelte'
   import ArticleCard from '$components/ArticleCard.svelte'
   import Seo from '$components/Seo.svelte'
-  import { attr, uniqueAttr } from '$features/reifenshop/format'
+  import { tireTitle, uniqueValues } from '$features/reifenshop/format'
   import { useCart } from '$features/reifenshop/cart-context.svelte'
-  import { getArticles } from './reifenshop.remote'
+  import { getTires } from './reifenshop.remote'
 
   const cart = useCart()
 
@@ -62,23 +63,23 @@
 
 <section class="bg-base-200 py-12 md:py-16">
   <div class="mx-auto max-w-7xl px-4">
-    {#await getArticles()}
+    {#await getTires()}
       <div class="text-base-content/70 flex items-center gap-3" role="status">
         <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
         Lade Reifensortiment…
       </div>
-    {:then articles}
-      {@const sizes = uniqueAttr(articles, 'size')}
-      {@const seasons = uniqueAttr(articles, 'season')}
-      {@const brands = uniqueAttr(articles, 'brand')}
+    {:then tires}
+      {@const sizes = uniqueValues(tires, 'sizeLabel')}
+      {@const seasons = uniqueValues(tires, 'season')}
+      {@const brands = uniqueValues(tires, 'brand')}
       {@const search = term.trim().toLowerCase()}
-      {@const filtered = articles.filter((a) => {
-        if (size && attr(a, 'size') !== size) return false
-        if (season && attr(a, 'season') !== season) return false
-        if (brand && attr(a, 'brand') !== brand) return false
-        if (maxPrice != null && (a.currentPriceNet ?? Infinity) > maxPrice) return false
+      {@const filtered = tires.filter((t) => {
+        if (size && t.sizeLabel !== size) return false
+        if (season && t.season !== season) return false
+        if (brand && t.brand !== brand) return false
+        if (maxPrice != null && (t.currentPriceNet ?? Infinity) > maxPrice) return false
         if (search) {
-          const hay = `${a.description ?? ''} ${a.articleNumber ?? ''}`.toLowerCase()
+          const hay = `${tireTitle(t)} ${t.articleNumber} ${t.sizeLabel}`.toLowerCase()
           if (!hay.includes(search)) return false
         }
         return true
@@ -90,7 +91,7 @@
             <Filter class="text-primary size-5" aria-hidden="true" />
             Filter
             <span class="text-base-content/60 ml-auto text-xs font-normal">
-              {filtered.length} von {articles.length} Artikeln
+              {filtered.length} von {tires.length} Reifen
             </span>
           </div>
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -151,24 +152,24 @@
         </div>
       </div>
 
-      {#if articles.length === 0}
+      {#if tires.length === 0}
         <div class="card bg-base-100 border-base-200 border" data-testid="empty">
           <div class="card-body items-center text-center">
-            <h2 class="card-title">Aktuell sind keine Artikel verfügbar</h2>
+            <h2 class="card-title">Aktuell sind keine Reifen verfügbar</h2>
             <p class="text-base-content/70">Schauen Sie in Kürze wieder vorbei.</p>
           </div>
         </div>
       {:else if filtered.length === 0}
         <div class="card bg-base-100 border-base-200 border" data-testid="no-results">
           <div class="card-body items-center text-center">
-            <h2 class="card-title">Keine Artikel zu diesen Filtern</h2>
+            <h2 class="card-title">Keine Reifen zu diesen Filtern</h2>
             <button type="button" class="btn btn-primary mt-2" onclick={resetFilters}>Filter zurücksetzen</button>
           </div>
         </div>
       {:else}
         <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="article-grid">
-          {#each filtered as article (article.id)}
-            <ArticleCard {article} />
+          {#each filtered as tire (tire.id)}
+            <ArticleCard {tire} />
           {/each}
         </div>
       {/if}

@@ -12,9 +12,11 @@ test.describe('Reifenshop', () => {
     await expect(
       page.getByRole('heading', { name: /Reifen schnell und fair/i, level: 1 })
     ).toBeVisible()
+    const grid = page.getByTestId('article-grid')
     await expect(
-      page.getByText('Continental PremiumContact 6 205/55 R16').first()
+      grid.getByRole('heading', { name: 'Continental PremiumContact 6' })
     ).toBeVisible()
+    await expect(grid.getByText('205/55 R16').first()).toBeVisible()
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -40,8 +42,9 @@ test.describe('Reifenshop', () => {
       page.getByRole('heading', { name: /Warenkorb/i, level: 1 })
     ).toBeVisible()
     await expect(
-      page.getByText('Continental PremiumContact 6 205/55 R16')
+      page.getByText('Continental PremiumContact 6')
     ).toBeVisible()
+    await expect(page.getByText(/205\/55 R16/)).toBeVisible()
 
     await page.getByRole('link', { name: /Zur Kasse/i }).click()
 

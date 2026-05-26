@@ -9,16 +9,37 @@ import { render } from '@testing-library/svelte'
 import { userEvent } from '@testing-library/user-event'
 import { flushSync } from 'svelte'
 import ArticleCardHarness from './__fixtures__/ArticleCardHarness.svelte'
-import type { PublicArticle } from '$lib/server/api/types'
+import type { PublicTire } from '$lib/server/api/types'
 
-function article(overrides: Partial<PublicArticle> = {}): PublicArticle {
+function tire(overrides: Partial<PublicTire> = {}): PublicTire {
   return {
-    id: 'a-1',
+    id: 't-1',
     articleNumber: 'TC-CON-2055516',
-    description: 'Continental PremiumContact 6',
-    unit: 'Stück',
+    brand: 'Continental',
+    model: 'PremiumContact 6',
+    width: 205,
+    aspectRatio: 55,
+    construction: 'R',
+    diameterInch: 16,
+    sizeLabel: '205/55 R16',
+    loadIndex: '91',
+    speedIndex: 'V',
+    season: 'Sommer',
+    ean: null,
+    manufacturerPartNumber: null,
+    fuelEfficiency: 'B',
+    wetGrip: 'A',
+    noiseClass: 'B',
+    noiseDb: 71,
+    runFlat: false,
+    reinforced: false,
+    studdedWinter: false,
+    mSMarking: false,
+    snowFlake: false,
+    evCertified: false,
+    description: '',
     currentPriceNet: 129,
-    attributes: { size: '205/55 R16', season: 'Sommer', brand: 'Continental' },
+    photos: [],
     shippingOptionId: null,
     ...overrides
   }
@@ -28,9 +49,9 @@ describe('ArticleCard', () => {
   beforeEach(() => window.localStorage.clear())
   afterEach(() => window.localStorage.clear())
 
-  it('renders description, spec line and price', () => {
+  it('renders title, spec line and price', () => {
     const { getByRole, getByText } = render(ArticleCardHarness, {
-      article: article()
+      tire: tire()
     })
     expect(
       getByRole('heading', { name: 'Continental PremiumContact 6' })
@@ -39,14 +60,14 @@ describe('ArticleCard', () => {
     expect(getByText(/129,00\s?€/)).toBeInTheDocument()
   })
 
-  it('links to the article detail page', () => {
-    const { getByRole } = render(ArticleCardHarness, { article: article() })
-    expect(getByRole('link')).toHaveAttribute('href', '/reifenshop/a-1')
+  it('links to the tire detail page', () => {
+    const { getByRole } = render(ArticleCardHarness, { tire: tire() })
+    expect(getByRole('link')).toHaveAttribute('href', '/reifenshop/t-1')
   })
 
   it('disables the add button when no price is available', () => {
     const { getByRole } = render(ArticleCardHarness, {
-      article: article({ currentPriceNet: null })
+      tire: tire({ currentPriceNet: null })
     })
     expect(getByRole('button', { name: /Warenkorb/i })).toBeDisabled()
   })
@@ -54,7 +75,7 @@ describe('ArticleCard', () => {
   it('clicking "Hinzu" adds to the cart without navigating', async () => {
     const user = userEvent.setup()
     const { getByRole } = render(ArticleCardHarness, {
-      article: article()
+      tire: tire()
     })
 
     await user.click(getByRole('button', { name: /Warenkorb/i }))
@@ -62,11 +83,11 @@ describe('ArticleCard', () => {
 
     // The cart persists to localStorage via `$effect`; reading the key
     // here doubles as a verification that the add ran end-to-end.
-    const raw = window.localStorage.getItem('tc.cart.v1')
+    const raw = window.localStorage.getItem('tc.cart.v2')
     expect(raw).toBeTruthy()
     const lines = JSON.parse(raw!) as { id: string; quantity: number }[]
     expect(lines).toHaveLength(1)
-    expect(lines[0].id).toBe('a-1')
+    expect(lines[0].id).toBe('t-1')
     expect(lines[0].quantity).toBe(1)
   })
 })
