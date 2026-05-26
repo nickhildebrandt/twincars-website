@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ─── Build stage ──────────────────────────────────────────────────────
-FROM node:lts-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # Build-time placeholders. Runtime values are supplied via website.env
@@ -21,7 +21,7 @@ COPY . .
 RUN npm run build && npm prune --omit=dev
 
 # ─── Runtime stage ────────────────────────────────────────────────────
-FROM node:lts-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
