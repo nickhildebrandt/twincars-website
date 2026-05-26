@@ -12,7 +12,8 @@ build
 coverage
 playwright-report
 test-results
-tests-examples
-tests
+e2e
 *.log
 README.md
+MISSING_APIS.md
+.env.example
