@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ─── Build stage ──────────────────────────────────────────────────────
-FROM node:22-alpine AS build
+FROM node:lts-slim AS build
 WORKDIR /app
 
 # Build-time placeholders. Runtime values are supplied via website.env
@@ -14,14 +14,14 @@ ENV PUBLIC_SITE_URL=$PUBLIC_SITE_URL
 ENV TC_MANAGER_API_URL=$TC_MANAGER_API_URL
 ENV TC_MANAGER_API_TOKEN=$TC_MANAGER_API_TOKEN
 
-COPY package.json package-lock.json .npmrc ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
 # ─── Runtime stage ────────────────────────────────────────────────────
-FROM node:22-alpine AS runtime
+FROM node:lts-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
@@ -30,6 +30,7 @@ ENV HOST=0.0.0.0
 COPY --from=build /app/build ./build
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/scripts ./scripts
 
 EXPOSE 3001
 
